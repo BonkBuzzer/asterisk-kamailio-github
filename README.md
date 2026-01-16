@@ -11,29 +11,40 @@
 - **TLS**: Let's Encrypt certificates (expires April 2026)
 
 ## Architecture
+```
+Browser (WebRTC) 
+  ↓ WSS:8443
+Kamailio (SIP Proxy)
+  ↓ UDP:5060
+Asterisk (PBX)
+```
 
+## Current Status ✅
 
-## Current Status
+### Working
+- ✅ WebSocket Secure (WSS) connection
+- ✅ TLS certificates valid
+- ✅ User registration (authentication works)
+- ✅ Kamailio → Asterisk forwarding
+- ✅ Registration with Contact header
+- ✅ Test extension 6000 configured
+- ✅ Calls connect to extension 6000
 
-### ✅ Working
-- WebSocket Secure (WSS) connection
-- TLS certificates valid
-- User registration (authentication works)
-- Kamailio → Asterisk forwarding
-- Test extension 6000 configured
+### Known Issues
+- ⚠️ **No audio on calls**: Codec mismatch - audio files are GSM format but WebRTC clients only support Opus
+- ⚠️ **SUBSCRIBE for voicemail fails**: Voicemail not configured (non-critical)
 
-### ❌ Issues
-- **Registration Contact Header**: Asterisk responds with 200 OK but doesn't include Contact header in response
-- **Root Cause**: Client sends Contact with TEST-NET IP (192.0.2.x) instead of real IP
-- **Impact**: SIP.js client rejects registration response
-- **Calls**: Not tested yet (blocked by registration issue)
+### Next Steps
+1. Convert audio files to Opus format OR install codec_opus module
+2. Configure external_media_address for proper RTP routing
+3. Test user-to-user calls (1001 ↔ 1002)
 
 ## Configuration Files
--  - Main Kamailio configuration
--  - TLS settings
--  - PJSIP endpoints and transports
--  - Dialplan
--  - RTP port range
+- `kamailio.cfg` - Main Kamailio configuration
+- `kamailio-tls.cfg` - TLS settings
+- `asterisk-pjsip.conf` - PJSIP endpoints and transports
+- `asterisk-extensions.conf` - Dialplan
+- `asterisk-rtp.conf` - RTP port range
 
 ## Users
 - 1001 / 1234
@@ -42,7 +53,7 @@
 ## Extensions
 - 1001 - User 1001
 - 1002 - User 1002
-- 6000 - Test IVR (plays hello-world)
+- 6000 - Test IVR (plays hello-world, goodbye)
 
 ## Ports
 - 8443 - Kamailio WSS
@@ -51,8 +62,7 @@
 - 8088 - Asterisk WebSocket
 - 10000-20000 - RTP media
 
-## Next Steps
-1. Fix Contact header rewriting in Kamailio
-2. Test calls between users
-3. Verify audio/RTP path
-4. Scale to multiple Asterisk servers
+## Important Notes
+- Always commit working configs to git before making changes
+- Asterisk crashes if invalid parameters are in pjsip.conf
+- rewrite_contact setting breaks authentication
